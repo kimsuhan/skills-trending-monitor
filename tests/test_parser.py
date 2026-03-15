@@ -9,7 +9,7 @@ def test_parse_from_embedded_json():
     html = '''
     <html><head>
     <script>
-    self.__next_f.push([1,"16:[\"$\",\"$L1e\",null,{\"initialSkills\":[{\"source\":\"testorg/testrepo\",\"skillId\":\"hello\",\"name\":\"hello\",\"installs\":123}]}"])
+    self.__next_f.push([1,"16:[\"$\",\"$L1e\",null,{\"initialSkills\":[{\"source\":\"testorg/testrepo\",\"skillId\":\"hello\",\"name\":\"hello\",\"installs\":123}],\"foo\":\"bar\"}"])
     </script>
     </head><body></body></html>
     '''
@@ -19,6 +19,8 @@ def test_parse_from_embedded_json():
     assert items[0]["category"] == "testorg/testrepo"
     assert items[0]["url"] == "https://skills.sh/testorg/testrepo/hello"
     assert items[0]["id_key"]
+    assert items[0]["rank"] == 1
+    assert items[0]["install_count"] == 123
 
 
 def test_parse_from_anchor_rows_fallback():
@@ -27,7 +29,7 @@ def test_parse_from_anchor_rows_fallback():
       <a href="/org/skill/abc" class="item">
         <div><span>123</span></div>
         <div><h3>abc</h3><p>org/skill</p></div>
-        <div>456</div>
+        <div>4.5K</div>
       </a>
     </div>
     '''
@@ -36,3 +38,5 @@ def test_parse_from_anchor_rows_fallback():
     assert items[0]["name"] == "abc"
     assert items[0]["category"] == "org/skill"
     assert items[0]["url"] == "https://skills.sh/org/skill/abc"
+    assert items[0]["rank"] == 123
+    assert items[0]["install_count"] == 4500

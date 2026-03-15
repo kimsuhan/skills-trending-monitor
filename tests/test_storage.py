@@ -1,7 +1,4 @@
 import sqlite3
-import tempfile
-from pathlib import Path
-
 from src.storage import get_connection, init_db, upsert_skills, list_new_skills
 
 
@@ -19,6 +16,8 @@ def test_dedup_insert_and_detect_new(tmp_path):
             "description": "",
             "discovered_at": "2026-03-15T00:00:00Z",
             "raw": "{}",
+            "rank": 1,
+            "install_count": 12,
         },
         {
             "id_key": "key2",
@@ -28,6 +27,8 @@ def test_dedup_insert_and_detect_new(tmp_path):
             "description": "",
             "discovered_at": "2026-03-15T00:00:00Z",
             "raw": "{}",
+            "rank": 2,
+            "install_count": 34,
         },
     ]
 
@@ -49,8 +50,36 @@ def test_dedup_insert_and_detect_new(tmp_path):
             "description": "",
             "discovered_at": "2026-03-15T00:00:00Z",
             "raw": "{}",
+            "rank": None,
+            "install_count": None,
         }
     )
     latest = list_new_skills(conn, skills)
     assert len(latest) == 1
     assert latest[0]["id_key"] == "key3"
+
+
+def test_init_db_migrates_old_schema(tmp_path):
+    db_path = tmp_path / "skills_legacy.db"
+    conn = sqlite3.connect(str(db_path))
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS skills (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          id_key TEXT NOT NULL UNIQUE,
+          name TEXT NOT NULL,
+          url TEXT NOT NULL,
+          category TEXT,
+          description TEXT,
+          discovered_at TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          raw TEXT
+        )
+        """
+    )
+    conn.commit()
+
+    init_db(conn)
+    col_names = {row[1] for row in conn.execute('PRAGMA table_info(skills)').fetchall()}
+    assert 'rank' in col_names
+    assert 'install_count' in col_names

@@ -14,6 +14,14 @@ MAX_MESSAGE_CHARS = 1800  # below Discord 2000-byte payload limit
 MAX_ITEMS_PER_MESSAGE = 15
 
 
+def _format_install_count(count: object) -> str:
+    if count is None:
+        return "-"
+    if isinstance(count, (int, float)):
+        return f"{int(count):,}"
+    return str(count)
+
+
 def build_discord_payload(new_skills: Sequence[Mapping[str, str]], start_index: int = 1) -> dict:
     """Build one Discord content payload.
 
@@ -28,9 +36,16 @@ def build_discord_payload(new_skills: Sequence[Mapping[str, str]], start_index: 
         name = skill.get("name", "(unknown)")
         source = skill.get("category", "")
         url = skill.get("url", "")
+        rank = skill.get("rank")
+        install_count = skill.get("install_count")
+
         lines.append(f"{idx}. **{name}**")
         if source:
             lines.append(f"   - source: `{source}`")
+        if rank is not None:
+            lines.append(f"   - rank: {rank}")
+        if install_count is not None:
+            lines.append(f"   - installs: {_format_install_count(install_count)}")
         if url:
             lines.append(f"   - {url}")
         lines.append("")

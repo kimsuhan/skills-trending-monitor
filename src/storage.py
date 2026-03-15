@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS skills (
   url TEXT NOT NULL,
   category TEXT,
   description TEXT,
+  rank INTEGER,
+  install_count INTEGER,
   discovered_at TEXT NOT NULL,
   created_at TEXT NOT NULL,
   raw TEXT
@@ -31,8 +33,18 @@ def get_connection(db_path: str | None = None) -> sqlite3.Connection:
     return conn
 
 
+def _ensure_columns(conn: sqlite3.Connection) -> None:
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(skills)").fetchall()}
+
+    if "rank" not in columns:
+        conn.execute("ALTER TABLE skills ADD COLUMN rank INTEGER")
+    if "install_count" not in columns:
+        conn.execute("ALTER TABLE skills ADD COLUMN install_count INTEGER")
+
+
 def init_db(conn: sqlite3.Connection) -> None:
     conn.execute(SCHEMA)
+    _ensure_columns(conn)
     conn.commit()
 
 
@@ -53,6 +65,8 @@ def upsert_skills(conn: sqlite3.Connection, skills: Sequence[Dict[str, str]]) ->
                 "url": skill.get("url", "") or "",
                 "category": skill.get("category", ""),
                 "description": skill.get("description", ""),
+                "rank": skill.get("rank"),
+                "install_count": skill.get("install_count"),
                 "discovered_at": skill.get("discovered_at", _to_iso_now()),
                 "created_at": _to_iso_now(),
                 "raw": skill.get("raw", ""),
@@ -60,8 +74,8 @@ def upsert_skills(conn: sqlite3.Connection, skills: Sequence[Dict[str, str]]) ->
             try:
                 conn.execute(
                     """
-                    INSERT INTO skills (id_key, name, url, category, description, discovered_at, created_at, raw)
-                    VALUES (:id_key, :name, :url, :category, :description, :discovered_at, :created_at, :raw)
+                    INSERT INTO skills (id_key, name, url, category, description, rank, install_count, discovered_at, created_at, raw)
+                    VALUES (:id_key, :name, :url, :category, :description, :rank, :install_count, :discovered_at, :created_at, :raw)
                     """,
                     payload,
                 )
@@ -105,6 +119,6 @@ def ensure_schema_and_get_ids(conn: sqlite3.Connection, skills: Sequence[Dict[st
 def list_skills_ordered(conn: sqlite3.Connection, limit: int = 20):
     init_db(conn)
     return conn.execute(
-        "SELECT id,name,url,category,description,discovered_at,created_at FROM skills ORDER BY created_at DESC LIMIT ?",
+        "SELECT id,name,url,category,description,rank,install_count,discovered_at,created_at FROM skills ORDER BY created_at DESC LIMIT ?",
         (limit,),
     ).fetchall()

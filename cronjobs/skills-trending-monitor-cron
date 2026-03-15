@@ -10,4 +10,4 @@ MAILTO=""
 0 9 * * * ${CRON_USER} \
   cd ${PROJECT_DIR} && \
   set -a && [ -f "${PROJECT_DIR}/.env" ] && source "${PROJECT_DIR}/.env" || true && set +a && \
-  "${PROJECT_DIR}/.venv/bin/python" -m src.main >> "${PROJECT_DIR}/logs/run.log" 2>&1
+  "${PROJECT_DIR}/.venv/bin/python" -m src.main

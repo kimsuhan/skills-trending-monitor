@@ -55,3 +55,27 @@ def get_webhook_retry_backoff_seconds() -> float:
         return max(0.0, float(os.getenv("WEBHOOK_RETRY_BACKOFF_SECONDS", "1.0").strip()))
     except ValueError:
         return 1.0
+
+
+def get_log_file() -> str:
+    return os.getenv("LOG_FILE", "./logs/run.log").strip()
+
+
+def get_log_max_bytes() -> int:
+    try:
+        return max(1024, int(os.getenv("LOG_MAX_BYTES", "5242880").strip()))
+    except ValueError:
+        return 5 * 1024 * 1024
+
+
+def get_log_backup_count() -> int:
+    try:
+        return max(1, int(os.getenv("LOG_BACKUP_COUNT", "3").strip()))
+    except ValueError:
+        return 3
+
+def get_trending_limit() -> int:
+    try:
+        return max(1, int(os.getenv("SKILLS_TRENDING_LIMIT", "400").strip()))
+    except ValueError:
+        return 400

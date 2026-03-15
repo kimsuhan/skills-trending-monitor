@@ -17,6 +17,7 @@ A lightweight tool that:
 - `tests/` – pytest coverage
 - `cronjobs/` – cron file templates
 - `data/` – local sqlite db location
+- 기본적으로 최대 400개 항목만 수집/처리하며, `SKILLS_TRENDING_LIMIT`로 조정 가능
 
 ## Setup
 
@@ -33,6 +34,7 @@ Required env var:
 Optional env vars:
 - `DB_PATH` (default: `./data/trending.db`)
 - `SKILLS_TRENDING_URL` (default: `https://skills.sh/trending`)
+- `SKILLS_TRENDING_LIMIT` (default: `400`)
 - `WEBHOOK_RETRY_ATTEMPTS` (default: `3`)
 - `WEBHOOK_RETRY_BACKOFF_SECONDS` (default: `1.0`)
 
@@ -69,5 +71,11 @@ Use `cronjobs/skills-trending-monitor-cron` as a template.
 ```cron
 0 9 * * * shkim cd /path/to/projects/skills-trending-monitor && \
   set -a && [ -f /path/to/projects/skills-trending-monitor/.env ] && source /path/to/projects/skills-trending-monitor/.env || true && set +a && \
-  /path/to/projects/skills-trending-monitor/.venv/bin/python -m src.main >> /path/to/projects/skills-trending-monitor/logs/run.log 2>&1
+  /path/to/projects/skills-trending-monitor/.venv/bin/python -m src.main
 ```
+
+
+DB에 `skills` 테이블 컬럼으로 `rank`, `install_count`(인기 지표)를 저장합니다.
+
+
+로그는 회전 저장되도록 구성됨: 기본적으로 `run.log`가 5MB, 백업 3개(총 20MB 내외) 유지됩니다.

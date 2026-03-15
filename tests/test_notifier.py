@@ -6,13 +6,27 @@ from src import notifier
 def test_payload_format_for_new_skills():
     payload = notifier.build_discord_payload(
         [
-            {"name": "abc", "category": "owner/repo", "url": "https://skills.sh/owner/repo/abc"},
-            {"name": "xyz", "category": "owner/repo", "url": "https://skills.sh/owner/repo/xyz"},
+            {
+                "name": "abc",
+                "category": "owner/repo",
+                "url": "https://skills.sh/owner/repo/abc",
+                "rank": 1,
+                "install_count": 12500,
+            },
+            {
+                "name": "xyz",
+                "category": "owner/repo",
+                "url": "https://skills.sh/owner/repo/xyz",
+                "rank": 2,
+                "install_count": None,
+            },
         ]
     )
     content = payload["content"]
     assert "1. **abc**" in content
     assert "2. **xyz**" in content
+    assert "rank: 1" in content
+    assert "installs: 12,500" in content
     assert "https://skills.sh/owner/repo/abc" in content
 
 
@@ -42,11 +56,21 @@ def test_send_payload(monkeypatch):
 
     monkeypatch.setattr(notifier.requests, "post", fake_post)
     notifier.notify_if_new(
-        [{"name": "abc", "category": "owner/repo", "url": "https://skills.sh/owner/repo/abc"}],
+        [
+            {
+                "name": "abc",
+                "category": "owner/repo",
+                "url": "https://skills.sh/owner/repo/abc",
+                "rank": 1,
+                "install_count": 10,
+            }
+        ],
         "https://example.webhook",
     )
     assert sent["url"] == "https://example.webhook"
     assert sent["json"]["content"].startswith("새로운 trending skill")
+    assert "rank: 1" in sent["json"]["content"]
+    assert "installs: 10" in sent["json"]["content"]
     assert sent["timeout"] == 15
 
 
@@ -96,8 +120,14 @@ def test_send_multiple_batches(monkeypatch):
     monkeypatch.setattr(notifier.requests, "post", fake_post)
 
     notifier.notify_if_new(
-        [{"name": f"s{i}", "category": "owner/repo", "url": f"https://skills.sh/owner/repo/s{i}"}
-         for i in range(18)],
+        [
+            {
+                "name": f"s{i}",
+                "category": "owner/repo",
+                "url": f"https://skills.sh/owner/repo/s{i}",
+            }
+            for i in range(18)
+        ],
         "https://example.webhook",
         retries=1,
     )

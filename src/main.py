@@ -3,21 +3,43 @@
 from __future__ import annotations
 
 import logging
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
 
 from src import config
 from src.crawler import get_trending_skills
 from src.notifier import notify_if_new
 from src.storage import get_connection, init_db, list_new_skills, upsert_skills
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(name)s - %(message)s",
-)
 
-logger = logging.getLogger(__name__)
+def _configure_logging() -> None:
+    """Configure bounded-size file logging for disk-constrained environments."""
+    log_file = Path(config.get_log_file())
+    log_file.parent.mkdir(parents=True, exist_ok=True)
+
+    handler = RotatingFileHandler(
+        log_file,
+        maxBytes=config.get_log_max_bytes(),
+        backupCount=config.get_log_backup_count(),
+        encoding="utf-8",
+    )
+
+    formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s - %(message)s")
+    handler.setFormatter(formatter)
+
+    # Replace root handlers to avoid duplicate logs on repeated imports/invocations.
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+    for h in list(root.handlers):
+        root.removeHandler(h)
+    root.addHandler(handler)
+
 
 
 def run_job() -> int:
+    _configure_logging()
+    logger = logging.getLogger(__name__)
+
     webhook_url = config.get_webhook_url()
     if not webhook_url:
         logger.error("DISCORD_WEBHOOK_URL is not set or invalid")
@@ -55,8 +77,6 @@ def run_job() -> int:
             logger.exception("Failed to persist skills: %s", exc)
             return 4
 
-        # inserts happen first, then notification.
-        # this prevents duplicate sends for retry-safe runs.
         try:
             notify_if_new(
                 new_skills,
