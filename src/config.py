@@ -1,0 +1,30 @@
+"""Configuration helpers."""
+
+import os
+from pathlib import Path
+
+DEFAULT_URL = "https://skills.sh/trending"
+
+def get_db_path() -> str:
+    db_path = os.getenv("DB_PATH", "./data/trending.db")
+    path = Path(db_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return str(path)
+
+def get_webhook_url() -> str:
+    return os.getenv("DISCORD_WEBHOOK_URL", "").strip()
+
+def get_trending_url() -> str:
+    return os.getenv("SKILLS_TRENDING_URL", DEFAULT_URL).strip()
+
+def get_webhook_retry_attempts() -> int:
+    try:
+        return max(1, int(os.getenv("WEBHOOK_RETRY_ATTEMPTS", "3").strip()))
+    except ValueError:
+        return 3
+
+def get_webhook_retry_backoff_seconds() -> float:
+    try:
+        return max(0.0, float(os.getenv("WEBHOOK_RETRY_BACKOFF_SECONDS", "1.0").strip()))
+    except ValueError:
+        return 1.0

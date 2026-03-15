@@ -1,0 +1,1 @@
+"""Skills Trending Monitor package."""
