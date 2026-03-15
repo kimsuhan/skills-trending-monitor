@@ -1,4 +1,3 @@
-import types
 from unittest.mock import Mock
 
 from src import notifier
@@ -81,7 +80,7 @@ def test_retry_gives_up_on_fail(monkeypatch):
     except Exception as exc:
         assert isinstance(exc, E)
     else:
-        assert False, "expected exception"
+        raise AssertionError("expected exception")
 
 
 def test_send_multiple_batches(monkeypatch):

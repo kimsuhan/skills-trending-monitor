@@ -1,11 +1,13 @@
 # /etc/cron.d/skills-trending-monitor (example)
 # Runs every day at 09:00 KST on a Linux host with TZ=Asia/Seoul.
-# Put DISCORD_WEBHOOK_URL and optional options in /home/shkim/.openclaw/projects/skills-trending-monitor/.env
+# Put DISCORD_WEBHOOK_URL and optional options in $PROJECT_DIR/.env
 
 SHELL=/bin/bash
 PATH=/usr/local/bin:/usr/bin:/bin
 MAILTO=""
 
-0 9 * * * shkim cd /home/shkim/.openclaw/projects/skills-trending-monitor && \
-  set -a && [ -f /home/shkim/.openclaw/projects/skills-trending-monitor/.env ] && source /home/shkim/.openclaw/projects/skills-trending-monitor/.env || true && set +a && \
-  /home/shkim/.openclaw/projects/skills-trending-monitor/.venv/bin/python -m src.main >> /home/shkim/.openclaw/projects/skills-trending-monitor/logs/run.log 2>&1
+# Minute Hour Day Month Weekday User Command
+0 9 * * * ${CRON_USER} \
+  cd ${PROJECT_DIR} && \
+  set -a && [ -f "${PROJECT_DIR}/.env" ] && source "${PROJECT_DIR}/.env" || true && set +a && \
+  "${PROJECT_DIR}/.venv/bin/python" -m src.main >> "${PROJECT_DIR}/logs/run.log" 2>&1

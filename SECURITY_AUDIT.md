@@ -33,3 +33,12 @@
   - Remediation: secure host permissions (least-privilege cron user), file permission `chmod 600 .env`, and monitor logs.
 - DB file (`data/trending.db`) remains on local disk.
   - Recommendation: restrict permissions on project directory and backup/rotate as needed.
+
+## Follow-up Audit (Path Hygiene)
+
+### Check: template portability
+- `cronjobs/skills-trending-monitor-cron` no longer hardcodes user home paths.
+- Template now uses placeholders for project path and cron user for safer copy/paste across machines.
+
+### Check: runtime docs
+- `README.md` and `cronjobs` template now avoid embedding user-specific absolute paths.
