@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Dict, List, Mapping, Sequence
+from typing import List, Mapping, Sequence
 
 import requests
 
@@ -41,6 +41,11 @@ def build_discord_payload(new_skills: Sequence[Mapping[str, str]], start_index: 
     }
 
 
+def _content_len(payload_content: str) -> int:
+    # safer against multibyte characters (Discord has byte-ish payload constraints)
+    return len(payload_content.encode("utf-8"))
+
+
 def _split_skills(skills: Sequence[Mapping[str, str]]) -> List[List[Mapping[str, str]]]:
     batches: List[List[Mapping[str, str]]] = []
     current: List[Mapping[str, str]] = []
@@ -49,17 +54,17 @@ def _split_skills(skills: Sequence[Mapping[str, str]]) -> List[List[Mapping[str,
         candidate = current + [skill]
         if not current:
             current = [skill]
-            # If a single item already exceeds max message size, keep it as its own batch.
-            if len(build_discord_payload(current)["content"]) > MAX_MESSAGE_CHARS:
+            if _content_len(build_discord_payload(current)["content"]) > MAX_MESSAGE_CHARS:
+                # Rare: if one record itself is too long, keep as single-item batch.
                 batches.append(current)
                 current = []
             continue
 
-        candidate_payload_len = len(build_discord_payload(candidate)["content"])
+        candidate_payload_len = _content_len(build_discord_payload(candidate)["content"])
         if len(candidate) > MAX_ITEMS_PER_MESSAGE or candidate_payload_len > MAX_MESSAGE_CHARS:
             batches.append(current)
             current = [skill]
-            if len(build_discord_payload(current)["content"]) > MAX_MESSAGE_CHARS:
+            if _content_len(build_discord_payload(current)["content"]) > MAX_MESSAGE_CHARS:
                 batches.append(current)
                 current = []
         else:
@@ -88,14 +93,16 @@ def send_to_discord(
             last_exc = exc
             if attempt >= retries:
                 break
+            sleep_for = backoff_seconds * (2 ** (attempt - 1))
             logger.warning(
                 "Discord send failed (attempt %s/%s). retrying in %.1fs: %s",
                 attempt,
                 retries,
-                backoff_seconds * (2 ** (attempt - 1)),
+                sleep_for,
                 exc,
             )
-            time.sleep(backoff_seconds * (2 ** (attempt - 1)))
+            if sleep_for > 0:
+                time.sleep(sleep_for)
 
     if last_exc is not None:
         raise last_exc

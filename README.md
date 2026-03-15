@@ -21,7 +21,7 @@ A lightweight tool that:
 ## Setup
 
 ```bash
-cd /home/shkim/.openclaw/projects/skills-trending-monitor
+cd /path/to/projects/skills-trending-monitor
 python -m venv .venv
 source .venv/bin/activate
 pip install -e .
@@ -36,12 +36,30 @@ Optional env vars:
 - `WEBHOOK_RETRY_ATTEMPTS` (default: `3`)
 - `WEBHOOK_RETRY_BACKOFF_SECONDS` (default: `1.0`)
 
+## Runtime environment file (recommended)
+
+Create `.env` at project root (not committed) and load it in cron:
+
+```bash
+cp .env.example .env
+chmod 600 .env
+```
+
+Example:
+```bash
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
+DB_PATH=./data/trending.db
+WEBHOOK_RETRY_ATTEMPTS=3
+WEBHOOK_RETRY_BACKOFF_SECONDS=1.0
+```
+
 ## Manual run
 
 ```bash
-cd /home/shkim/.openclaw/projects/skills-trending-monitor
+cd /path/to/projects/skills-trending-monitor
 source .venv/bin/activate
-DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/…" python -m src.main
+source .env
+python -m src.main
 ```
 
 ## Cron setup
@@ -49,6 +67,7 @@ DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/…" python -m src.main
 Use `cronjobs/skills-trending-monitor-cron` as a template.
 
 ```cron
-TZ=Asia/Seoul
-0 9 * * * shkim /home/shkim/.openclaw/projects/skills-trending-monitor/.venv/bin/python -m src.main >> /home/shkim/.openclaw/projects/skills-trending-monitor/logs/run.log 2>&1
+0 9 * * * shkim cd /path/to/projects/skills-trending-monitor && \
+  set -a && [ -f /path/to/projects/skills-trending-monitor/.env ] && source /path/to/projects/skills-trending-monitor/.env || true && set +a && \
+  /path/to/projects/skills-trending-monitor/.venv/bin/python -m src.main >> /path/to/projects/skills-trending-monitor/logs/run.log 2>&1
 ```

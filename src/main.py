@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 def run_job() -> int:
     webhook_url = config.get_webhook_url()
     if not webhook_url:
-        logger.error("DISCORD_WEBHOOK_URL is not set")
+        logger.error("DISCORD_WEBHOOK_URL is not set or invalid")
         return 1
 
     conn = get_connection()
@@ -55,8 +55,8 @@ def run_job() -> int:
             logger.exception("Failed to persist skills: %s", exc)
             return 4
 
-        # Important: inserts happen first, then notification.
-        # This is intentional to prevent duplicate sends and keeps idempotency across retries.
+        # inserts happen first, then notification.
+        # this prevents duplicate sends for retry-safe runs.
         try:
             notify_if_new(
                 new_skills,
@@ -74,5 +74,9 @@ def run_job() -> int:
     return 0
 
 
+def main() -> int:
+    return run_job()
+
+
 if __name__ == "__main__":
-    raise SystemExit(run_job())
+    raise SystemExit(main())
